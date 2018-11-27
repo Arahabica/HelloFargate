@@ -6,14 +6,17 @@
 # 作成系
 
 ## Dockerfile => Docker Image
-docker build -t test-express:1.0 .
+docker build -t test-express .
 
 ## Docker Image => Docker Container
 # 3000 => Docker Container内で定義しているポート
 # 3005 => 外部からアクセスするポート
 # my-app-342 => 愛称
 # test-express:1.0 => Docker Image
-docker run -it --rm -p 3005:3000 --name my-app-342 test-express:1.0
+docker run -it --rm -p 3005:3000 --name my-app-342 test-express:latest
+
+# デーモンモード
+docker run -it --rm -d -p 3005:3000 --name my-app-342 test-express:latest
 
 ######
 # 参照系
@@ -45,10 +48,10 @@ docker ps
 docker rmi ${IMAGE_ID}
 
 ## delete Docker Container
-docker rm ${CONTAINER_ID}
+docker rm -f ${CONTAINER_ID}
 
 ## delete all Docker Container
-docker rm $(docker ps -aq)
+docker rm -f $(docker ps -aq)
 
 
 ######
@@ -61,3 +64,16 @@ docker exec -it ${CONTAINER_ID} /bin/sh
 # ex) $CONTAINER_NAME=my-app-342
 docker exec -it $(docker ps -f "Name=${CONTAINER_NAME}" -aq) /bin/sh
 
+
+######
+# AWS系
+
+# ECSのリポジトリを作成
+# AWS => ECS => Repository => Create Repository
+
+# ECSのリポジトリにイメージをプッシュする
+# `aws ecr get-login --no-include-email --profile your-alias`
+`aws ecr get-login --no-include-email`
+docker build -t test-express .
+docker tag test-express:latest 636061485504.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
+docker push 636061485504.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
