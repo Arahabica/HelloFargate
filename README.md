@@ -16,24 +16,14 @@ docker run -it --rm -p 3005:80 --name my-app-342 test-express:latest
 * 3005 => 外部からアクセスするポート
 * my-app-342 => 愛称
 * test-express:1.0 => Docker Image
-* デーモンモード
 
 ```
 docker run -it --rm -d -p 3005:80 --name my-app-342 test-express:latest
 ```
 
+* デーモンモード
+
 ## 参照系
-
-### list Docker image list
-```
-docker image list
-```
-
-```
-REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
-test-express            1.0                 0362f3b42af2        14 minutes ago      71.1MB
-XXXX                    X.X                 406f227b21f5        9 months ago        68.1MB
-```
 
 ### list Docker images
 
@@ -93,19 +83,58 @@ docker exec -it $(docker ps -f "Name=${CONTAINER_NAME}" -aq) /bin/sh
 
 ## AWS系
 
-### ECSのリポジトリを作成
+### ECSのリポジトリ(ECR)を作成
 
 AWS => ECS => Repository => Create Repository
 
-### ECSのリポジトリにイメージをプッシュする
+### ECSのリポジトリ(ECR)にイメージをプッシュする
 
 ```
-`aws ecr get-login --no-include-email --profile your-alias`
 `aws ecr get-login --no-include-email`
 docker build -t test-express .
 docker tag test-express:latest 636069999999.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
 docker push 636069999999.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
 ```
+### Fargate上で動くWebサービスにALB経由でアクセス
+
+#### 1. ALB設置
+
+##### 1.1 Target Group作成
+
+`EC2` => `Target Groups` => `Create target group` => `Target type` を `IP` にする！
+
+##### 1.2 ALB作成
+
+`EC2` => `Load Balancers` => `Create Load Balancer` => `ALB`
+=> (中略) => `Configure Routing` => `Target Group`
+=> 1.1で作ったTarget Group を指定
+
+
+#### 2 Task Definition作成
+
+`ECS` => `Task Definitions` => `Create new Task Definition`
+=> `Fargate` => `Container Definitions` => `Add container`
+=> `Image`に`ECR`に登録されているURLを記入する。末尾に`:latest`をつける。
+=> `Port mappings`にContainerが露出しているポートを設定する
+
+#### 3. ECS Cluster 設置
+
+`ECS` => `Clusters` => `Create Cluster` => `Networking only`
+
+
+#### 3. ECS Cluster Service 登録
+
+`ECS` => `Clusters` => 作成したCluster
+=> `Services` => `Create`
+=> LaunchType: `Fargate` => Task Definitionに作成したTask Definitionを設定
+=> Load balancer type: `Application Load Balancer`
+=> Load balancer name: 作ったALB => `Container to load balance`
+=> `Add to load balancer` => Target group name: 作ったTarget group
+
+
+### ECS Clusterのコンテナ内のログ出力
+
+ClusterにServiceを立てると勝手にCloudFlontにコンテナ内のログが出力されるようになる。
 
 ### ECS Cluster Serviceのログ出力
 
