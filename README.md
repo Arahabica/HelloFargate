@@ -87,13 +87,26 @@ docker exec -it $(docker ps -f "Name=${CONTAINER_NAME}" -aq) /bin/sh
 
 AWS => ECS => Repository => Create Repository
 
-### ECSのリポジトリ(ECR)にイメージをプッシュする
+```
+REPOSITORY=test-express
+
+`aws ecr get-login --no-include-email`
+aws ecr create-repository --repository-name ${REPOSITORY}
+```
+
+### ECSのリポジトリ(ECR)を作成してイメージをプッシュする
 
 ```
+REPOSITORY=test-express
+AWS_ACCOUNT_ID=436999999999
+AWS_REGION=ap-northeast-1
+
 `aws ecr get-login --no-include-email`
-docker build -t test-express .
-docker tag test-express:latest 636069999999.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
-docker push 636069999999.dkr.ecr.ap-northeast-1.amazonaws.com/test-express-repo:latest
+aws ecr create-repository --repository-name ${REPOSITORY}
+docker build -t ${REPOSITORY} .
+docker tag test-express:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}:latest
+docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}:latest
+echo  ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPOSITORY}:latest
 ```
 ### Fargate上で動くWebサービスにALB経由でアクセス
 
